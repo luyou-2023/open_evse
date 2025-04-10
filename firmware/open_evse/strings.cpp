@@ -1,30 +1,27 @@
 // -*- C++ -*-
-/*
- * Open EVSE Firmware
- *
- * This file is part of Open EVSE.
+// Open EVSE 固件
+//
+// 该文件是 Open EVSE 项目的一部分
+//
+// Open EVSE 是自由软件；你可以在 GNU 通用公共许可证的条款下重新分发和/或修改
+// 它，许可证版本为 3，或（根据你的选择）任何更高版本。
+//
+// Open EVSE 在希望它能有用的前提下发布，但没有任何担保；甚至没有关于适销性或适合特定用途的
+// 隐含担保。请参阅 GNU 通用公共许可证以获取更多细节。
+//
+// 你应该已收到 GNU 通用公共许可证的副本
+// 随 Open EVSE 一起；请参阅 COPYING 文件。如果没有，请写信给
+// 自由软件基金会，地址为 59 Temple Place - Suite 330,
+// 波士顿，MA 02111-1307，美国。
 
- * Open EVSE is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 3, or (at your option)
- * any later version.
-
- * Open EVSE is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
-
- * You should have received a copy of the GNU General Public License
- * along with Open EVSE; see the file COPYING.  If not, write to the
- * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
- * Boston, MA 02111-1307, USA.
- */
 #include "open_evse.h"
 
+// 固件版本字符串
 const char VERSTR[] PROGMEM = VERSION;
 
-
+// 如果启用了 BTN_MENU 或 SHOW_DISABLED_TESTS
 #if defined(BTN_MENU) || defined(SHOW_DISABLED_TESTS)
+// 配置界面和诊断字符串
 const char g_psSettings[] PROGMEM = STR_SETTINGS;
 const char g_psSetup[] PROGMEM = STR_SETUP;
 const char g_psSvcLevel[] PROGMEM = STR_SERVICE_LEVEL;
@@ -47,12 +44,15 @@ const char g_psHighTemp[] PROGMEM = STR_HIGH_TEMP;
 #endif
 #endif // BTN_MENU || SHOW_DISABLED_TEST
 
+// 如果启用了 BTN_MENU
 #ifdef BTN_MENU
+// 菜单项字符串定义
 const char *g_YesNoMenuItems[] = STR_YES_NO;
 const char g_psResetNow[] PROGMEM = STR_RESTART_NOW;
 const char g_psReset[] PROGMEM = STR_RESTART;
 const char g_psExit[] PROGMEM = STR_EXIT;
-// Add additional strings - GoldServe
+
+// 额外的字符串定义 - GoldServe
 #ifdef DELAYTIMER_MENU
 const char g_psRTC[] PROGMEM = STR_DATE_TIME;
 const char g_psRTC_Month[] PROGMEM = STR_MONTH;
@@ -66,17 +66,21 @@ const char g_psDelayTimerStartMin[] PROGMEM = STR_START_MIN;
 const char g_psDelayTimerStopHour[] PROGMEM = STR_STOP_HOUR;
 const char g_psDelayTimerStopMin[] PROGMEM = STR_STOP_MIN;
 #endif // DELAYTIMER_MENU
+
 #ifdef CHARGE_LIMIT
 const char g_psChargeLimit[] PROGMEM = STR_CHARGE_LIMIT;
 #endif // CHARGE_LIMIT
+
 #ifdef TIME_LIMIT
 const char g_psTimeLimit[] PROGMEM = STR_TIME_LIMIT;
 #endif // TIME_LIMIT
+
 #ifdef RGBLCD
 const char *g_BklMenuItems[] = STR_RGB_MONOCHROME;
 #endif // RGBLCD
 #endif // BTN_MENU
 
+// 如果启用了 LCD16X2
 #ifdef LCD16X2
 #ifdef ADVPWR
 const char g_psPwrOn[] PROGMEM = STR_POWER_ON;
@@ -86,6 +90,8 @@ const char g_psLevel1[] PROGMEM = STR_SVC_LEVEL_L1;
 const char g_psLevel2[] PROGMEM = STR_SVC_LEVEL_L2;
 const char g_psTestFailed[] PROGMEM = STR_TEST_FAILED;
 #endif // ADVPWR
+
+// 各种错误和状态信息
 const char g_psEvseError[] PROGMEM =  STR_EVSE_ERROR;
 const char g_psSvcReq[] PROGMEM =  STR_SERVICE_REQUIRED;
 const char g_psVentReq[] PROGMEM = STR_VENT_REQUIRED;
@@ -104,6 +110,7 @@ const char g_psSleeping[] PROGMEM = STR_SLEEPING;
 const char g_psEvConnected[] PROGMEM = STR_CONNECTED;
 const char g_psResetting[] PROGMEM = STR_RESETTING;
 const char g_psRelayClosureFault[] PROGMEM = STR_RELAY_CLOSURE_FAULT;
+
 #ifdef SHOW_DISABLED_TESTS
 const char g_psDisabledTests[] PROGMEM = STR_TEST_DISABLED;
 #endif
@@ -115,6 +122,7 @@ const char *g_sMaxCurrentFmt = STRF_MAX_CURRENT;
 #endif // LCD16X2
 
 #ifdef DELAYTIMER_MENU
+// 延迟计时器设置菜单
 const char g_psSetDateTime[] PROGMEM = STR_SET_DATE_TIME;
 const char *g_DelayMenuItems[] = STR_YESNO_SETSTART_SETSTOP;
 #endif // DELAYTIMER_MENU
