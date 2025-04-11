@@ -57,51 +57,52 @@ static inline unsigned long ulong_sqrt(unsigned long in)
 
 void J1772EVSEController::readAmmeter()
 {
-  WDT_RESET();
+  WDT_RESET(); // 重置看门狗计时器，防止系统重启
 
-  unsigned long sum = 0;
-  uint8_t zero_crossings = 0;
-  unsigned long last_zero_crossing_time = 0, now_ms;
-  uint8_t is_first_sample = 1;
-  uint16_t last_sample;
-  unsigned int sample_count = 0;
+  unsigned long sum = 0; // 存储样本平方和
+  uint8_t zero_crossings = 0; // 记录零交叉点的数量
+  unsigned long last_zero_crossing_time = 0, now_ms; // 上次零交叉的时间和当前时间（毫秒）
+  uint8_t is_first_sample = 1; // 标记是否为第一次采样
+  uint16_t last_sample; // 上次采样的值
+  unsigned int sample_count = 0; // 记录采样次数
+
+  // 循环采样，直到达到了设定的采样间隔
   for(unsigned long start = millis(); ((now_ms = millis()) - start) < CURRENT_SAMPLE_INTERVAL; ) {
-    // the A/d is 0 to 1023.
-    uint16_t sample = adcCurrent.read();
-    // If this isn't the first sample, and if the sign of the value differs from the
-    // sign of the previous value, then count that as a zero crossing.
+    uint16_t sample = adcCurrent.read(); // 从模拟输入读取电流样本，范围是0到1023
+
+    // 如果这不是第一次采样，并且当前值与上一个值的符号不同，则计为零交叉
     if (!is_first_sample && ((last_sample > 512) != (sample > 512))) {
-      // Once we've seen a zero crossing, don't look for one for a little bit.
-      // It's possible that a little noise near zero could cause a two-sample
-      // inversion.
+      // 一旦检测到零交叉，避免由于噪声造成的误判断，设置去抖动时间
       if ((now_ms - last_zero_crossing_time) > CURRENT_ZERO_DEBOUNCE_INTERVAL) {
-        zero_crossings++;
-        last_zero_crossing_time = now_ms;
+        zero_crossings++; // 记录零交叉
+        last_zero_crossing_time = now_ms; // 更新零交叉时间
       }
     }
-    is_first_sample = 0;
-    last_sample = sample;
+
+    is_first_sample = 0; // 标记已经完成第一次采样
+    last_sample = sample; // 更新上次采样值
+
+    // 根据零交叉次数选择操作
     switch(zero_crossings) {
     case 0:
-      continue; // Still waiting to start sampling
+      continue; // 还没有检测到零交叉，继续等待
     case 1:
     case 2:
-      // Gather the sum-of-the-squares and count how many samples we've collected.
+      // 在零交叉后，累加每个采样的平方（用于计算有效值）
       sum += (unsigned long)(((long)sample - 512) * ((long)sample - 512));
-      sample_count++;
+      sample_count++; // 增加采样次数
       continue;
     case 3:
-      // The answer is the square root of the mean of the squares.
-      // But additionally, that value must be scaled to a real current value.
-      // we will do that elsewhere
-      m_AmmeterReading = ulong_sqrt(sum / sample_count);
-      return;
+      // 如果已经采集了三个零交叉点，则计算有效值（RMS）
+      m_AmmeterReading = ulong_sqrt(sum / sample_count); // 计算平方和的均值，然后取平方根
+      return; // 返回电流值
     }
   }
-  // ran out of time. Assume that it's simply not oscillating any.
+
+  // 如果在设定的时间内没有检测到有效数据，假设没有发生振荡，电流为0
   m_AmmeterReading = 0;
 
-  WDT_RESET();
+  WDT_RESET(); // 最后再一次重置看门狗计时器
 }
 
 #define MA_PTS 32 // # points in moving average MUST BE power of 2
@@ -1007,6 +1008,36 @@ void J1772EVSEController::Update(uint8_t forcetransition)
     return;
   }
 
+  /**
+  在电动汽车（EV）中，Pilot 信号的处理主要由 充电控制器（Charging Controller）来完成。这个控制器通常是与 车载充电器（OBC, On-Board Charger）或 充电管理系统（Charging Management System）紧密集成的。
+
+  1. Pilot 信号的作用
+  Pilot 信号 是由充电站（EVSE, Electric Vehicle Supply Equipment）传输到电动汽车（EV）的一种信号，主要用于指示充电设备的充电能力和要求（例如最大充电电流、充电状态等）。它帮助电动汽车判断充电站是否正常、是否准备好充电，并控制充电过程的安全性。
+
+  2. 处理 Pilot 信号的系统
+  车载充电器（OBC） 或 充电控制器（Charging Controller）：负责处理 Pilot 信号，并根据这些信号调整车辆的充电策略。车载充电器将通过 Pilot 信号与充电桩（EVSE）进行通信，并根据充电桩的信号控制电池充电过程。
+
+  在交流充电的情况下，充电控制器会从 Pilot 信号中读取充电电流限制（通过信号中传输的电压信息），并根据电池的状态和安全要求来决定实际的充电电流。
+
+  在直流充电的情况下，充电控制器会根据充电站的直流充电要求和电池的状态，控制电池的充电电压和电流。
+
+  3. 电动汽车与充电桩的通信
+  Pilot 信号的工作流程：
+
+  充电桩发送 Pilot 信号，包含关于充电设备的状态（例如最大电流、充电模式等）。
+
+  车载充电器（OBC） 或 充电控制器接收这些信号，并根据信号控制充电过程。
+
+  **BMS（电池管理系统）**会根据车载充电器（OBC）发出的电流要求监控和调节电池充电状态，确保电池安全充电。
+
+  4. 系统协作
+  充电控制器（OBC）负责解码和处理 Pilot 信号，确保充电电流和电压符合充电桩的要求，并与 BMS（电池管理系统） 协作，确保电池处于安全状态。
+
+  BMS 主要负责电池的监控，确保电池在合适的电流、电压和温度范围内充电。
+
+  5. 总结
+  在电动汽车中，处理 Pilot 信号 的主要是 车载充电器（OBC） 或 充电控制器。它们解码 Pilot 信号并根据信号控制充电过程，与 BMS（电池管理系统） 协作，确保充电过程安全高效
+  **/
   ReadPilot(&plow,&phigh); // 始终读取以便更新 EV 连接状态
 
   if (EvConnectedTransition()) {
